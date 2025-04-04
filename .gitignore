@@ -1,0 +1,40 @@
+# Python-related ignores
+__pycache__/
+*.py[cod]
+*.swp
+*.swo
+*.DS_Store
+*.log
+
+# Virtual environment
+venv/
+env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE-specific ignores
+.vscode/
+.idea/
+*.iml
+
+# Jupyter Notebook checkpoints (if using Jupyter)
+.ipynb_checkpoints/
+
+# FAISS vector store directory
+faiss_index/
+
+# API keys & environment variables
+.env
+*.env
+
+# Cached files and temp data
+*.cache
+*.pkl
+*.joblib
+*.gz
+*.zip
+
+# Ignore large generated outputs
+outputs/
+data/
