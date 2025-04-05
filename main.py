@@ -1,17 +1,21 @@
 import os
+from datetime import time
+
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
+from pinecone import Pinecone, ServerlessSpec
+from langchain_pinecone import PineconeVectorStore
 
 load_dotenv()
 
 # Define the FAISS index directory
 faiss_index_path = "faiss_index"
+pc_index_name = "my-first-rag"
 
 # Define pre PDF files
 pdf_files = ["john.pdf", "iphones.pdf", "microsoft.pdf"]
@@ -22,25 +26,36 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 print("Initializing embedding model...")
 embedding_model = FastEmbedEmbeddings()
 
-print("Initializing vector store...")
-if os.path.exists(faiss_index_path):
-    print("FAISS index found. Loading existing vector store...")
-    vector_store = FAISS.load_local(faiss_index_path, embedding_model, allow_dangerous_deserialization=True)
-else:
-    print("FAISS index not found. Creating new vector store with pre pdf files...")
-
+print("Initializing pinecone vector store...")
+pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+if pc_index_name not in existing_indexes:
+    pc.create_index(
+        name=pc_index_name,
+        dimension=384,  # Replace with your model dimensions
+        metric="cosine",  # Replace with your model metric
+        spec=ServerlessSpec(
+            cloud="aws",
+            region="us-east-1"
+        )
+    )
+    while not pc.describe_index(pc_index_name).status['ready']:  # Wait for the index to be ready
+        time.sleep(1)
+    index = pc.Index(pc_index_name)
+    vector_store = PineconeVectorStore(index=index, embedding=embedding_model)
     documents = []
     for pdf in pdf_files:
         loader = PyPDFLoader(f"resources/{pdf}")
         documents.extend(loader.load())
-
+    print(documents)
     split_docs = text_splitter.split_documents(documents)
+    print(split_docs)
     texts = [doc.page_content.strip() for doc in split_docs if doc.page_content.strip()]
+    print(texts)
+    vector_store.add_texts(texts)
 
-    vector_store = FAISS.from_texts(texts, embedding_model)
-
-    print("Storing new vector store...")
-    vector_store.save_local(faiss_index_path)
+index = pc.Index(pc_index_name)
+vector_store = PineconeVectorStore(index=index, embedding=embedding_model)
 
 print("Initializing LLM model...")
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -73,7 +88,9 @@ qa_chain = RetrievalQA.from_chain_type(
 )
 print("The QA chain is successfully initialized. ")
 
-query = input("\nAsk your question: ")
+# query = input("\nAsk your question: ")
+query = "Who is John?"
+
 print("Processing...")
 response = qa_chain.invoke({"query": query})
 
@@ -85,4 +102,3 @@ print("=== Source Documents ===")
 for doc in response["source_documents"]:
     print(f"Document content: {doc.page_content[:300]}...")
     print(f"Document metadata: {doc.metadata}\n")
-
