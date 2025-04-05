@@ -1,6 +1,6 @@
 from utils import get_vector_store, getLLM, getPromptTemplate, createRagChain, printResponse
 
-pc_index_name = "my-first-rag"                                  # Define the vector store index
+pc_index_name = "icyco-ai-assistant"                            # Define the vector store index
 pdf_files = ["about.pdf", "products.pdf"]                       # Define pre PDF files
 
 vector_store = get_vector_store(pc_index_name, pdf_files)       # Initialize vector store

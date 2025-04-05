@@ -32,8 +32,8 @@ def get_vector_store(pc_index_name, pdf_files):
 def create_vector_store(pc, pc_index_name, pdf_files, embedding_model):
     pc.create_index(
         name=pc_index_name,
-        dimension=384,  # Replace with your model dimensions
-        metric="cosine",  # Replace with your model metric
+        dimension=384,
+        metric="cosine",
         spec=ServerlessSpec(
             cloud="aws",
             region="us-east-1"
@@ -49,7 +49,6 @@ def create_vector_store(pc, pc_index_name, pdf_files, embedding_model):
 
 
 def getTextSplitter():
-    print("Initializing text splitter...")
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=50)
     return text_splitter
 
@@ -99,7 +98,7 @@ def createRagChain(llm, vector_store, prompt_template):
     print("\nInitializing QA RAG system...")
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
-        retriever=vector_store.as_retriever(search_kwargs={"k": 3}),
+        retriever=vector_store.as_retriever(search_kwargs={"k": 3}),  # Selects the top 3 most relevant chunks
         chain_type="stuff",
         return_source_documents=True,
         chain_type_kwargs={"prompt": prompt_template},
@@ -118,20 +117,21 @@ def printResponse(response):
         print(f"Document content: {doc.page_content}...")
 
 
-def process_pdf_file(file_path):
+def create_chunks(file_path):
     loader = PyPDFLoader(f"resources/{file_path}")
-    document = loader.load()[0]
+    documents = loader.load()  # Load all pages of the pdf
 
-    document.page_content = clean_text(document.page_content)
+    for doc in documents:
+        doc.page_content = clean_text(doc.page_content)
 
-    chunked_docs = getTextSplitter().split_documents([document])
+    chunked_docs = getTextSplitter().split_documents(documents)
     return chunked_docs
 
 
 def add_documents_to_vector_store(vector_store, pdfs):
     chunks = []
     for pdf in pdfs:
-        chunks.extend(process_pdf_file(pdf))
+        chunks.extend(create_chunks(pdf))
     vector_store.add_documents(chunks)
 
 
