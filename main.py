@@ -1,7 +1,9 @@
 from utils import get_vector_store, getLLM, getPromptTemplate, createRagChain, printResponse
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 vector_store = None
 llm = None
@@ -15,6 +17,7 @@ def chat():
     chat_history = data["chat_history"]
 
     prompt_template = getPromptTemplate(chat_history)  # Prepare prompt template
+    print(prompt_template)
     rag_chain = createRagChain(llm, vector_store, prompt_template)  # Initialize rag chain
 
     response = rag_chain.invoke({"query": query})  # Process the query
