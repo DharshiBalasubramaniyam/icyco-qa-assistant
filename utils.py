@@ -66,11 +66,11 @@ def getLLM():
     return llm
 
 
-def getPromptTemplate():
+def getPromptTemplate(chat_history):
     print("Initializing prompt template...")
     prompt_template = PromptTemplate(
         template="""
-            You are an AI assistant for Icyco, an ice cream shop. Your role is to assist with questions strictly related to Icyco's products, services, events, or company information.
+            You are an AI assistant for Icyco, an ice cream shop. Your role is to assist user with questions strictly related to Icyco's products, services, events, or company information.
         
             Use the following retrieved documents to answer the user's question. 
             
@@ -83,13 +83,16 @@ def getPromptTemplate():
         
             Context:
             {context}
-        
-            Question:
-            {question}
-        
-            Answer:
-        """,
-        input_variables=["context", "question"],
+            
+            """ +
+                 f"""
+                {chat_history}
+                """ +
+                 """
+                    user: {question}
+                    Assistant:
+                    """,
+        input_variables=["context", "question"]
     )
     return prompt_template
 
