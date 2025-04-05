@@ -1,5 +1,6 @@
 from datetime import time
 import os
+import re
 
 from dotenv import load_dotenv
 from langchain.chains.retrieval_qa.base import RetrievalQA
@@ -21,7 +22,7 @@ def get_vector_store(pc_index_name, pdf_files):
     existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
 
     if pc_index_name not in existing_indexes:
-        print(f"Vector sture index '{pc_index_name}' not found. Create new...")
+        print(f"Vector store index '{pc_index_name}' not found. Create new...")
         create_vector_store(pc, pc_index_name, pdf_files, embedding_model)
 
     index = pc.Index(pc_index_name)
@@ -43,22 +44,13 @@ def create_vector_store(pc, pc_index_name, pdf_files, embedding_model):
     print(f"Successfully created vector store index '{pc_index_name}'. Adding pdf files to new index...")
     index = pc.Index(pc_index_name)
     vector_store = PineconeVectorStore(index=index, embedding=embedding_model)
-    documents = []
-    for pdf in pdf_files:
-        loader = PyPDFLoader(f"resources/{pdf}")
-        documents.extend(loader.load())
-    print(documents)
-    split_docs = getTextSplitter().split_documents(documents)
-    print(split_docs)
-    texts = [doc.page_content.strip() for doc in split_docs if doc.page_content.strip()]
-    print(texts)
-    vector_store.add_texts(texts)
+    add_documents_to_vector_store(vector_store, pdf_files)
     return vector_store
 
 
 def getTextSplitter():
     print("Initializing text splitter...")
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=50)
     return text_splitter
 
 
@@ -79,16 +71,24 @@ def getPromptTemplate():
     print("Initializing prompt template...")
     prompt_template = PromptTemplate(
         template="""
-        You are an AI assistant. Use the following retrieved documents to answer the user's question.
-        If the answer is not found in the documents, say "I don't know" instead of making up an answer.
-
-        Context:
-        {context}
-
-        Question:
-        {question}
-
-        Answer:
+            You are an AI assistant for Icyco, an ice cream shop. Your role is to assist with questions strictly related to Icyco's products, services, events, or company information.
+        
+            Use the following retrieved documents to answer the user's question. 
+            
+            - If the question is unrelated to Icyco, respond with: 
+              "I am only able to assist with questions related to Icyco."
+            - If the question is related to Icyco but you cannot find the answer in the provided documents, respond with:
+              "That’s a great question about Icyco, but I couldn’t find the answer in the available information. You may want to check with Icyco directly for more details."
+                    
+            Be concise, helpful, and do not make up answers.
+        
+            Context:
+            {context}
+        
+            Question:
+            {question}
+        
+            Answer:
         """,
         input_variables=["context", "question"],
     )
@@ -99,7 +99,7 @@ def createRagChain(llm, vector_store, prompt_template):
     print("\nInitializing QA RAG system...")
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
-        retriever=vector_store.as_retriever(search_kwargs={"k": 1}),
+        retriever=vector_store.as_retriever(search_kwargs={"k": 3}),
         chain_type="stuff",
         return_source_documents=True,
         chain_type_kwargs={"prompt": prompt_template},
@@ -114,5 +114,27 @@ def printResponse(response):
 
     print("=== Source Documents ===")
     for doc in response["source_documents"]:
-        print(f"Document content: {doc.page_content[:300]}...")
-        print(f"Document metadata: {doc.metadata}\n")
+        print(f"\n{doc.metadata['title']}, Page no: {doc.metadata['page_label']}:")
+        print(f"Document content: {doc.page_content}...")
+
+
+def process_pdf_file(file_path):
+    loader = PyPDFLoader(f"resources/{file_path}")
+    document = loader.load()[0]
+
+    document.page_content = clean_text(document.page_content)
+
+    chunked_docs = getTextSplitter().split_documents([document])
+    return chunked_docs
+
+
+def add_documents_to_vector_store(vector_store, pdfs):
+    chunks = []
+    for pdf in pdfs:
+        chunks.extend(process_pdf_file(pdf))
+    vector_store.add_documents(chunks)
+
+
+def clean_text(text):
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
