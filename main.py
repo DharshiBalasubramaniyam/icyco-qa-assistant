@@ -10,8 +10,8 @@ agent = initialize_agent(
     verbose=True
 )
 
-response = agent.run("What is 12 * 8?")
+response = agent.invoke({"input": "What is 12 * 8?"})
 print("\nFinal Answer:", response)
 
-response = agent.run("Reverse word 'Apple'.")
+response = agent.invoke({"input": "Reverse word 'Apple'."})
 print("\nFinal Answer:", response)
