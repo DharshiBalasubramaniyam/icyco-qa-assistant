@@ -123,9 +123,9 @@ def printResponse(response):
     print(response["result"])
 
     print("=== Source Documents ===")
-    # for doc in response["source_documents"]:
-    #     print(f"\n{doc.metadata['title']}, Page no: {doc.metadata['page_label']}:")
-    #     print(f"Document content: {doc.page_content}...")
+    for doc in response["source_documents"]:
+        print(f"\n{doc.metadata['title']}, Page no: {doc.metadata['page_label']}:")
+        print(f"Document content: {doc.page_content}...")
 
 
 def create_chunks(file_path):

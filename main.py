@@ -1,39 +1,17 @@
-from utils import get_vector_store, getLLM, getPromptTemplate, createRagChain, printResponse
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from langchain.agents import initialize_agent, AgentType
+from tools import tools
+from utils import getLLM
 
-app = Flask(__name__)
-CORS(app)
+llm = getLLM()
+agent = initialize_agent(
+    tools,
+    llm,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True
+)
 
-vector_store = None
-llm = None
+response = agent.run("What is 12 * 8?")
+print("\nFinal Answer:", response)
 
-
-@app.post('/chat')
-def chat():
-    data = request.get_json()
-
-    query = data["query"]
-    chat_history = data["chat_history"]
-
-    prompt_template = getPromptTemplate(chat_history)  # Prepare prompt template
-    print(prompt_template)
-    rag_chain = createRagChain(llm, vector_store, prompt_template)  # Initialize rag chain
-
-    response = rag_chain.invoke({"query": query})  # Process the query
-    printResponse(response)  # Display the response
-
-    return jsonify({
-        "result": response["result"],
-    }), 200
-
-
-if __name__ == '__main__':
-    print("Initializing vector store and LLM...")
-    pc_index_name = "icyco-ai-assistant"
-    pdf_files = ["about.pdf", "products.pdf"]
-
-    vector_store = get_vector_store(pc_index_name, pdf_files)
-    llm = getLLM()
-    print("Initialization complete!")
-    app.run()
+response = agent.run("Reverse word 'Apple'.")
+print("\nFinal Answer:", response)
