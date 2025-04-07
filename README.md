@@ -3,7 +3,7 @@
 ![image](https://github.com/user-attachments/assets/95088b62-225f-4cde-9876-93f978ce714c)
 
 
-Icyco QA Assistant is an console based AI-powered Question Answering system built for the fictional ice cream shop **Icyco**. It uses Retrieval-Augmented Generation (RAG) to provide accurate answers based on company documents like policies, product information, and FAQs.
+Icyco QA Assistant is an console based AI-powered Question Answering system built for the fictional ice cream shop [**Icyco**](https://icyco.vercel.app/). It uses Retrieval-Augmented Generation (RAG) to provide accurate answers based on company documents like policies, product information, and FAQs.
 
 ---
 
