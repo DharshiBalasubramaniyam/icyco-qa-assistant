@@ -5,6 +5,8 @@
 
 Icyco QA Assistant is an console based AI-powered Question Answering system built for the fictional ice cream shop [**Icyco**](https://icyco.vercel.app/). It uses Retrieval-Augmented Generation (RAG) to provide accurate answers based on company documents like policies, product information, and FAQs.
 
+Check out my blog **[Getting Started with RAG by Building a QA Assistant](https://medium.com/@dharshib.8/getting-started-with-rag-by-building-a-qa-assistant-a72b9140b554)**, for a more detailed explanation of the implementation.
+
 ---
 
 ## 🧠 Features
@@ -50,8 +52,6 @@ Create a `.env` file similar to `.env.example` and provide necessary details.
 ````bash
 python app.py
 ````
-
-Checkout my blog **[Getting Started with RAG by Building a QA Assistant](https://medium.com/@dharshib.8/getting-started-with-rag-by-building-a-qa-assistant-a72b9140b554)**, for more detail explanation of the implementation.
 
 ---
 
